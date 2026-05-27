@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Graficador Tekstelas — Manufacturas Eliot S.A.S</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:Arial,sans-serif}
+html,body{background:#999;height:100%;min-height:100vh}
+#app{display:flex;flex-direction:column;height:100vh;padding:5px;gap:3px;background:#999}
+#hdr{background:#f0f0f0;border:1px solid #bbb;border-radius:3px;padding:4px 8px;display:flex;gap:5px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.hf{display:flex;flex-direction:column;gap:1px}
+.hf label{font-size:7px;font-weight:700;color:#666;text-transform:uppercase}
+.hf input,.hf select{padding:2px 4px;border:1px solid #bbb;border-radius:2px;font-size:10px;background:white}
+#h-nom{width:175px;font-size:11px;font-weight:700}
+#std-disp{font-size:16px;font-weight:700;color:#c0392b;min-width:52px;letter-spacing:1px}
+.vsep{width:1px;background:#ccc;align-self:stretch;margin:0 2px}
+.btn-sede{padding:2px 7px;font-size:8px;font-weight:700;cursor:pointer;border:1px solid #999;border-radius:2px;background:#e0e0e0;display:block;margin-bottom:2px}
+.btn-sede:hover{background:#ccc}
+#sede-tag{font-size:8px;font-weight:700;color:#1a5276;min-width:80px;align-self:center}
+.hdr-r{margin-left:auto;display:flex;gap:4px;align-items:center}
+.hbtn{padding:4px 10px;font-size:9px;font-weight:700;cursor:pointer;border:none;border-radius:3px;color:white}
+#btn-dig{background:#1abc9c}
+#btn-exp{background:#27ae60}
+#lienzo-wrap{flex:1;position:relative;background:white;border:1px solid #bbb;border-radius:3px;overflow:auto;min-height:0}
+#svgC{display:block;background:white}
+#zoom-ctrl{position:fixed;bottom:70px;right:12px;display:flex;flex-direction:column;gap:3px;z-index:50}
+.zbtn{width:32px;height:32px;font-size:18px;font-weight:700;cursor:pointer;border:1px solid #aaa;border-radius:5px;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;user-select:none;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.zbtn:hover{background:#ddd}
+.zbtn:active{background:#bbb}
+#panel{background:#ddd;border:1px solid #bbb;border-radius:3px;padding:4px;display:flex;gap:4px;align-items:stretch;flex-shrink:0;overflow-x:auto;min-height:44px}
+.pg{display:flex;gap:2px;align-items:center;border-right:1px solid #aaa;padding-right:4px;flex-shrink:0}
+.pg:last-child{border-right:none}
+.plbl{font-size:7px;font-weight:700;color:#333;text-transform:uppercase;writing-mode:vertical-rl;margin-right:2px;letter-spacing:.4px;user-select:none;background:#fff;padding:2px 1px;border-radius:2px;border:1px solid #ccc}
+.bp{padding:5px 8px;font-size:9px;font-weight:700;cursor:pointer;border:1px solid #999;border-radius:3px;background:#fff;white-space:nowrap;line-height:1.1}
+.bp:hover{filter:brightness(.88)}
+.bp-tr{background:#c0392b;color:#fff;border-color:#922b21}
+.bp-ll{background:#2471a3;color:#fff;border-color:#1a5276}
+.bp-vc{background:#566573;color:#fff;border-color:#424949}
+.bp-ad{background:#1d8348;color:#fff;border-color:#145a32}
+.bp-ds{background:#7d3c98;color:#fff;border-color:#5b2c6f}
+.bp-enj{background:#1a9db5;color:#fff;border-color:#148a9e}
+.bp-op{background:#2e86c1;color:#fff;border-color:#1a5276}
+.bp-un{background:#eee;color:#333}
+.bp-rs{background:#e74c3c;color:#fff;border-color:#c0392b}
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:300;align-items:center;justify-content:center}
+.mov.open{display:flex}
+.mbox{background:white;border:2px solid #555;border-radius:5px;padding:13px 15px;min-width:252px;max-width:318px;box-shadow:0 6px 24px rgba(0,0,0,.3)}
+.mbox h3{font-size:12px;font-weight:700;margin-bottom:9px;border-bottom:1px solid #ddd;padding-bottom:4px}
+.mf{display:flex;flex-direction:column;gap:2px;margin-bottom:7px}
+.mf label{font-size:8.5px;font-weight:700;color:#444}
+.mf input,.mf select{padding:4px 6px;border:1px solid #bbb;border-radius:2px;font-size:11px}
+#qlist{max-height:280px;overflow-y:auto;border:1px solid #ddd;border-radius:2px;margin-bottom:5px}
+.qi{padding:3px 7px;cursor:pointer;border-bottom:1px solid #f0f0f0;font-size:10px}
+.qi:hover{background:#dff0f8}
+.mbts{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}
+.mbts button{padding:5px 13px;font-size:10px;font-weight:700;cursor:pointer;border-radius:3px;border:1px solid #aaa}
+.bok{background:#27ae60;color:white;border-color:#1e8449}
+.bcan{background:#eee}
+.prv{font-size:8.5px;color:#444;background:#f5f5f5;padding:4px 6px;border-radius:2px;min-height:14px;margin-top:2px;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="mov" id="mo-tr">
+<div class="mbox">
+  <h3>CIRC / TERMORREGULAR</h3>
+  <div class="mf"><label>Temperatura destino °C — dejar vacío para solo circular</label><input type="number" id="tr-t" min="0" max="140"></div>
+  <div class="mf"><label>Gradiente °C/min — obligatorio si hay temperatura</label><input type="number" id="tr-g" min="0.1" max="10" step="0.1"></div>
+  <div class="mf"><label>Tiempo circular / sostenimiento (min)</label><input type="number" id="tr-s" min="0" value="0"></div>
+  <div class="prv" id="tr-prv"></div>
+  <div class="mbts"><button class="bcan" onclick="cM('mo-tr')">Cancelar</button><button class="bok" onclick="confTR()">Agregar</button></div>
+</div></div>
+<div class="mov" id="mo-mx">
+<div class="mbox">
+  <h3>LLENADO MIXTO</h3>
+  <div class="mf"><label>Entre</label><select id="mx-a"><option>W1</option><option>W2</option><option>W3</option><option>T2</option><option>T3</option></select></div>
+  <div class="mf"><label>y</label><select id="mx-b"><option>W2</option><option>W1</option><option>W3</option><option>T2</option><option>T3</option></select></div>
+  <div class="mbts"><button class="bcan" onclick="cM('mo-mx')">Cancelar</button><button class="bok" onclick="confMX()">Agregar</button></div>
+</div></div>
+<div class="mov" id="mo-enj">
+<div class="mbox">
+  <h3>ENJUAGUE</h3>
+  <div class="mf"><label>Tipo llenado</label><select id="enj-ll" oninput="prvENJ()"><option>W1</option><option>W2</option><option>W3</option><option>T2</option><option>T3</option></select></div>
+  <div class="mf"><label>Temperatura inicial °C (temp actual de la máquina)</label><input type="number" id="enj-ti" min="0" max="140" value="0" oninput="prvENJ()"></div>
+  <div class="mf"><label>Temperatura final °C — el lavado solo enfría (0 = no enfría)</label><input type="number" id="enj-temp" min="0" max="140" value="0" oninput="prvENJ()"></div>
+  <div class="mf"><label>Gradiente °C/min (solo si hay temperatura final)</label><input type="number" id="enj-grad" min="0" max="10" step="0.1" value="0" oninput="prvENJ()"></div>
+  <div class="mf"><label>Tiempo de lavado (min)</label><input type="number" id="enj-sost" min="0" max="300" value="0" oninput="prvENJ()"></div>
+  <div class="mf"><label>Tipo vaciado</label><select id="enj-vc"><option>V1</option><option>V2</option><option>V3</option><option>T2</option><option>T3</option><option>PTAR</option></select></div>
+  <div class="prv" id="enj-prv">Llenado y vaciado simultáneos (rebose)</div>
+  <div class="mbts"><button class="bcan" onclick="cM('mo-enj')">Cancelar</button><button class="bok" onclick="confENJ()">Agregar</button></div>
+</div></div>
+<div class="mov" id="mo-ad">
+<div class="mbox" style="max-width:330px">
+  <h3 id="ad-ttl">INTRODUCCIÓN</h3>
+  <div class="mf"><label>Buscar producto</label><input type="text" id="ad-srch" oninput="filtQ()" autocomplete="off"></div>
+  <div id="qlist"></div>
+  <div class="mf" id="ad-tw" style="display:none"><label>Tiempo dosificación (min)</label><input type="number" id="ad-time" min="1" max="120" value="10"></div>
+  <div class="mf" id="ad-pw" style="display:none"><label>Progresión (%)</label><input type="number" id="ad-prog" min="0" max="100"></div>
+  <div class="prv" id="ad-prv"></div>
+  <div class="mbts"><button class="bcan" onclick="cM('mo-ad')">Cancelar</button><button class="bok" onclick="confAD()">Agregar</button></div>
+</div></div>
+<div class="mov" id="mo-sede">
+<div class="mbox" style="min-width:185px">
+  <h3>Calle 80 — Bodega</h3>
+  <div style="display:flex;flex-direction:column;gap:5px;margin-top:5px">
+    <button class="bok" style="padding:9px;font-size:12px" onclick="setBodega('Bodega 4')">Bodega 4</button>
+    <button class="bok" style="padding:9px;font-size:12px;background:#e67e22;border-color:#ca6f1e" onclick="setBodega('Bodega 11')">Bodega 11</button>
+  </div>
+  <div class="mbts"><button class="bcan" onclick="cM('mo-sede')">Cancelar</button></div>
+</div></div>
+
+<div id="app">
+  <div id="hdr">
+    <div class="hf"><label>Nombre receta</label><input type="text" id="h-nom" oninput="dibujar()"></div>
+    <div class="vsep"></div>
+    <div class="hf"><label>Número</label><input type="text" id="h-num" style="width:50px" oninput="dibujar()"></div>
+    <div class="hf"><label>Versión</label><input type="text" id="h-ver" style="width:36px" oninput="dibujar()"></div>
+    <div class="hf"><label>Tipo</label><select id="h-tipo" style="width:58px" oninput="dibujar()"><option>Jet</option><option>Hilo</option><option>Beam</option><option>Jigger</option></select></div>
+    <div class="hf"><label>Fecha</label><input type="date" id="h-fecha" style="width:106px" oninput="dibujar()"></div>
+    <div class="vsep"></div>
+    <div class="hf"><label>STD</label><div id="std-disp">00:00</div></div>
+    <div class="vsep"></div>
+    <div>
+      <button class="btn-sede" onclick="clickSede('Calle 80')">CALLE 80</button>
+      <button class="btn-sede" style="margin-bottom:0" onclick="clickSede('Calle 19')">CALLE 19</button>
+    </div>
+    <div id="sede-tag"></div>
+    <div class="hdr-r">
+      <button class="hbtn" id="btn-dig" onclick="digitalizar()">🖨 DIGITALIZAR</button>
+      <button class="hbtn" id="btn-exp" onclick="exportJPG()">📷 EXPORTAR</button>
+    </div>
+  </div>
+  <div id="lienzo-wrap">
+    <svg id="svgC"></svg>
+  </div>
+  <div id="zoom-ctrl">
+    <div class="zbtn" onclick="zoomIn()" title="Zoom +">+</div>
+    <div class="zbtn" onclick="zoomOut()" title="Zoom −">−</div>
+    <div class="zbtn" onclick="zoomReset()" title="Ajustar" style="font-size:10px">↺</div>
+  </div>
+  <div id="panel">
+    <div class="pg"><span class="plbl">Temp</span><button class="bp bp-tr" onclick="abrirTR()">CIRCULAR / TR</button></div>
+    <div class="pg"><span class="plbl">Llenados</span>
+      <button class="bp bp-ll" onclick="addLL('W1',30)">W1</button>
+      <button class="bp bp-ll" onclick="addLL('W2',50)">W2</button>
+      <button class="bp bp-ll" onclick="addLL('W3',50)">W3</button>
+      <button class="bp bp-ll" style="background:#1f618d" onclick="addLL('T2',50)">T2</button>
+      <button class="bp bp-ll" style="background:#154360" onclick="addLL('T3',50)">T3</button>
+      <button class="bp bp-ll" style="background:#117a65" onclick="abrirMX()">Mixto</button>
+    </div>
+    <div class="pg"><span class="plbl">Vaciados</span>
+      <button class="bp bp-vc" onclick="addVC('V1')">V1</button>
+      <button class="bp bp-vc" onclick="addVC('V2')">V2</button>
+      <button class="bp bp-vc" onclick="addVC('V3')">V3</button>
+      <button class="bp bp-vc" style="background:#4d5656" onclick="addVC('T2')">T2</button>
+      <button class="bp bp-vc" style="background:#2e4053" onclick="addVC('T3')">T3</button>
+      <button class="bp bp-vc" style="background:#7b241c" onclick="addVC('PTAR')">PTAR</button>
+    </div>
+    <div class="pg"><span class="plbl">Enjuague</span><button class="bp bp-enj" onclick="abrirENJ()">ENJUAGUE</button></div>
+    <div class="pg"><span class="plbl">Químicos</span>
+      <button class="bp bp-ad" onclick="abrirAD('intro')">+ Introducción</button>
+      <button class="bp bp-ds" onclick="abrirAD('dosif')">▾ Dosificación</button>
+    </div>
+    <div class="pg"><span class="plbl">Operador</span>
+      <button class="bp bp-op" onclick="addOp('PH')">PH</button>
+      <button class="bp bp-op" onclick="addOp('TONO')">TONO</button>
+      <button class="bp bp-op" onclick="addOp('MUESTRA')">MUESTRA</button>
+    </div>
+    <div class="pg"><span class="plbl">Control</span>
+      <button class="bp bp-un" onclick="deshacer()">↩ Deshacer</button>
+      <button class="bp bp-rs" onclick="resetear()">RESET</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QUIMICOS=['ACIDO ACETICO','ACIDO FORMICO','AGUA','ALKALI','ANTIESPUMANTE','AUXILIARES','CARBONADO DE SODIO','COLORANTE ACIDO','COLORANTE ALGODÓN','COLORANTE DIRECTO','COLORANTE DISPERSO','COLORANTE OPTICO','COLORANTE POLIESTER','COLORANTE REACTIVO','DETERGENTE','DISPERSANTE','ENZIMA BIOPULIDO','FIJADOR','HIDROSULFITO DE SODIO','IGUALADOR','JABÓN','MATIZADOR','NAPHTALENE','NEUTRALIZADO','PEROXFIN','PEROXIDO DE HIDROGENO','REDUCTOR','SAL','SAL DOSIFICADA','SAL RECIRCULADA','SODA CAUSTICA','SULFATO DE SODIO'];
+const QCOL=['#e74c3c','#f39c12','#27ae60','#3498db','#2980b9','#9b59b6','#e67e22','#1abc9c','#e91e63','#16a085','#c0392b','#d35400','#7f8c8d','#2c3e50','#1d8348','#117a65','#154360','#6c3483','#b7950b','#1a5276','#784212','#4a235a','#1b4f72','#0e6251','#7b241c','#515a5a','#1c2833','#a93226','#5d6d7e','#ca6f1e','#8e44ad','#2471a3'];
+const TMAX=140,ML={left:60,right:40,top:30,bottom:140},PX_PER_MIN=8,SW=26;
+let pasos=[],historia=[],qIdx=0,_sede='',_bodega='',_adTipo='intro',_zoom=1,_tempPos={},_opPos={},_visualOffset=0,_legPos={x:0,y:0};
+
+function dims(){const e=document.getElementById('lienzo-wrap'),r=e.getBoundingClientRect();return{w:Math.max(r.width,480),h:Math.max(r.height,300)};}
+function totMin(){const c=getCurva();return c.length>0?c[c.length-1].min:0;}
+function totMinReal(){return totMin()-_visualOffset;}
+function svgW(){return Math.max(totMin()*PX_PER_MIN+ML.left+ML.right+120, dims().w);}
+function tx(m){return ML.left+(m*PX_PER_MIN);}
+function ty(t){const{h}=dims();const ph=h-ML.top-ML.bottom;return ML.top+ph-(t/TMAX)*ph;}
+function getCurva(){let p=[{min:0,temp:0}];pasos.forEach(s=>p=p.concat(s.puntos));return p;}
+function lastP(){const c=getCurva();return c[c.length-1];}
+function gH(){historia.push(JSON.parse(JSON.stringify(pasos)));}
+function cM(id){document.getElementById(id).classList.remove('open');}
+function oM(id){document.getElementById(id).classList.add('open');}
+function updSTD(){const m=totMinReal(),hh=String(Math.floor(m/60)).padStart(2,'0'),mm=String(Math.floor(m%60)).padStart(2,'0');document.getElementById('std-disp').textContent=hh+':'+mm;}
+
+function zoomIn(){_zoom=Math.min(_zoom*1.25,3);applyZoom();}
+function zoomOut(){_zoom=Math.max(_zoom/1.25,0.5);applyZoom();}
+function zoomReset(){_zoom=1;applyZoom();}
+function applyZoom(){
+  const wrap=document.getElementById('lienzo-wrap');
+  const svg=document.getElementById('svgC');
+  svg.style.transform='scale('+_zoom+')';
+  svg.style.transformOrigin='top left';
+  dibujar();
+}
+
+window.addEventListener('load',()=>{
+  document.getElementById('h-fecha').value=new Date().toISOString().split('T')[0];
+  filtQ();
+  setTimeout(()=>{dibujar();updSTD();},100);
+});
+window.addEventListener('resize',()=>{dibujar();});
+
+function clickSede(s){_sede=s;if(s==='Calle 80')oM('mo-sede');else{_bodega='';document.getElementById('sede-tag').textContent='📍 Calle 19';dibujar();}}
+function setBodega(b){_bodega=b;cM('mo-sede');document.getElementById('sede-tag').textContent='📍 '+_sede+' · '+b;dibujar();}
+
+function abrirTR(){
+  const u=lastP();
+  document.getElementById('tr-t').value='';document.getElementById('tr-g').value='';document.getElementById('tr-s').value='0';
+  document.getElementById('tr-prv').textContent='Temp actual: '+u.temp+'°C | Min: '+u.min.toFixed(1);
+  ['tr-t','tr-g','tr-s'].forEach(id=>document.getElementById(id).oninput=prvTR);
+  oM('mo-tr');
+}
+function prvTR(){
+  const u=lastP(),tv=document.getElementById('tr-t').value,td=tv===''?null:parseFloat(tv),gr=parseFloat(document.getElementById('tr-g').value),st=parseFloat(document.getElementById('tr-s').value)||0;
+  if(td===null){document.getElementById('tr-prv').textContent='Solo circular: '+st+' min';return;}
+  if(!gr)return;
+  const tR=(Math.abs(td-u.temp)/gr).toFixed(1);
+  document.getElementById('tr-prv').textContent='Rampa: '+tR+'min  Sost: '+st+'min  Total: '+(parseFloat(tR)+st).toFixed(1)+'min';
+}
+function confTR(){
+  const u=lastP(),tv=document.getElementById('tr-t').value,td=tv===''?null:parseFloat(tv),gr=parseFloat(document.getElementById('tr-g').value),st=parseFloat(document.getElementById('tr-s').value)||0;
+  if(td!==null&&(!gr||gr<=0)){alert('Gradiente obligatorio si hay temperatura destino.');return;}
+  if(td!==null&&(td<0||td>TMAX)){alert('Temperatura fuera de rango 0–140°C.');return;}
+  if(td===null&&st<=0){alert('Ingresa al menos el tiempo de circulación.');return;}
+  gH();const pts=[];
+  if(td!==null){
+    const diff=Math.abs(td-u.temp),tR=parseFloat((diff/gr).toFixed(2));
+    if(diff>0)pts.push({min:parseFloat((u.min+tR).toFixed(2)),temp:td});
+    if(st>0)pts.push({min:parseFloat((u.min+tR+st).toFixed(2)),temp:td});
+    if(!pts.length)pts.push({min:u.min,temp:td});
+    pasos.push({tipo:'tr',puntos:pts,tR,tS:st,grad:gr,tDest:td,tOrig:u.temp,soloCirc:false});
+  } else {
+    pts.push({min:parseFloat((u.min+st).toFixed(2)),temp:u.temp});
+    pasos.push({tipo:'tr',puntos:pts,tR:0,tS:st,grad:null,tDest:u.temp,tOrig:u.temp,soloCirc:true});
+  }
+  cM('mo-tr');dibujar();updSTD();
+}
+
+function addLL(lbl,temp){gH();const u=lastP();_visualOffset+=2;pasos.push({tipo:'ll',lbl,puntos:[{min:u.min,temp},{min:parseFloat((u.min+5).toFixed(2)),temp}],durMin:3,llTemp:temp});dibujar();updSTD();}
+function abrirMX(){oM('mo-mx');}
+function confMX(){const a=document.getElementById('mx-a').value,b=document.getElementById('mx-b').value;gH();const u=lastP();_visualOffset+=2;pasos.push({tipo:'ll',lbl:'MX',lblMx:a+'+'+b,puntos:[{min:u.min,temp:42},{min:parseFloat((u.min+5).toFixed(2)),temp:42}],durMin:3,llTemp:42});cM('mo-mx');dibujar();updSTD();}
+function addVC(lbl){const u=lastP();gH();_visualOffset+=2;pasos.push({tipo:'vc',lbl,puntos:[{min:u.min,temp:0},{min:parseFloat((u.min+5).toFixed(2)),temp:0}],durMin:3});dibujar();updSTD();}
+
+function abrirENJ(){
+  const u=lastP();
+  document.getElementById('enj-ti').value=u.temp;document.getElementById('enj-temp').value=0;
+  document.getElementById('enj-grad').value=0;document.getElementById('enj-sost').value=0;
+  oM('mo-enj');setTimeout(()=>prvENJ(),50);
+}
+function prvENJ(){
+  const llT=document.getElementById('enj-ll').value,llTemps={W1:30,W2:50,W3:50,T2:50,T3:50},llTemp=llTemps[llT]||30;
+  const ti=parseFloat(document.getElementById('enj-ti').value)||llTemp,tf=parseFloat(document.getElementById('enj-temp').value)||0;
+  const eG=parseFloat(document.getElementById('enj-grad').value)||0,eS=parseFloat(document.getElementById('enj-sost').value)||0;
+  let tTotal=eS;if(tf>ti&&eG>0)tTotal+=(tf-ti)/eG;
+  const tStr=String(Math.round(tTotal));
+  document.getElementById('enj-prv').textContent=`${ti}°C → ${tf>0?tf+'°C':'sin calentar'}  Sost: ${eS}min  Total lavado: ${tStr}min`;
+}
+function confENJ(){
+  const llT=document.getElementById('enj-ll').value,llTemps={W1:30,W2:50,W3:50,T2:50,T3:50},llTemp=llTemps[llT]||30;
+  const ti=parseFloat(document.getElementById('enj-ti').value)||llTemp,tf=parseFloat(document.getElementById('enj-temp').value)||0;
+  const eG=parseFloat(document.getElementById('enj-grad').value)||0,eS=parseFloat(document.getElementById('enj-sost').value)||0;
+  const vcT=document.getElementById('enj-vc').value,u=lastP();gH();const pts=[];let cur=u.min;
+  if(eG>0&&tf>0&&tf<ti){
+    pts.push({min:parseFloat(cur.toFixed(2)),temp:ti});cur+=(ti-tf)/eG;pts.push({min:parseFloat(cur.toFixed(2)),temp:tf});
+    if(eS>0){cur+=eS;pts.push({min:parseFloat(cur.toFixed(2)),temp:tf});}
+    pts.push({min:parseFloat(cur.toFixed(2)),temp:0});
+  } else {
+    pts.push({min:parseFloat(cur.toFixed(2)),temp:llTemp});
+    if(eS>0){cur+=eS;pts.push({min:parseFloat(cur.toFixed(2)),temp:llTemp});}
+    pts.push({min:parseFloat(cur.toFixed(2)),temp:0});
+  }
+  pasos.push({tipo:'enj',llT,vcT,puntos:pts,llTemp,eT:tf,eTi:ti,eG,eS});cM('mo-enj');dibujar();updSTD();
+}
+
+function abrirAD(tipo){
+  _adTipo=tipo;document.getElementById('ad-ttl').textContent=tipo==='intro'?'INTRODUCCIÓN':'DOSIFICACIÓN';
+  document.getElementById('ad-srch').value='';
+  document.getElementById('ad-tw').style.display=tipo==='dosif'?'flex':'none';
+  document.getElementById('ad-pw').style.display=tipo==='dosif'?'flex':'none';
+  document.getElementById('ad-prv').textContent='';filtQ();oM('mo-ad');setTimeout(()=>document.getElementById('ad-srch').focus(),50);
+}
+function filtQ(){
+  const q=document.getElementById('ad-srch').value.toLowerCase();
+  document.getElementById('qlist').innerHTML=QUIMICOS.filter(x=>!q||x.toLowerCase().includes(q)).map(x=>`<div class="qi" onclick="selQ(this.textContent)">${x}</div>`).join('');
+}
+function selQ(n){document.getElementById('ad-srch').value=n;filtQ();}
+function confAD(){
+  const prod=document.getElementById('ad-srch').value.trim();
+  if(!prod){alert('Selecciona o escribe el nombre del producto.');return;}
+  const tD=_adTipo==='dosif'?(parseFloat(document.getElementById('ad-time').value)||10):2;
+  const prog=_adTipo==='dosif'?(parseFloat(document.getElementById('ad-prog').value)||null):null;
+  const visualDur=_adTipo==='dosif'?Math.max(tD,4):5;_visualOffset+=(visualDur-tD);
+  const u=lastP();gH();qIdx++;
+  pasos.push({tipo:'q',sub:_adTipo,prod,dur:tD,puntos:[{min:parseFloat((u.min+visualDur).toFixed(2)),temp:u.temp}],idx:qIdx,color:QCOL[(qIdx-1)%QCOL.length],prog});
+  cM('mo-ad');dibujar();updSTD();
+}
+function addOp(lbl){gH();const u=lastP();pasos.push({tipo:'op',lbl,puntos:[{min:u.min,temp:u.temp}]});dibujar();}
+function recalcOffset(){_visualOffset=0;pasos.forEach(p=>{if(p.tipo==='ll')_visualOffset+=1;else if(p.tipo==='vc')_visualOffset+=1;else if(p.tipo==='q'){const vd=Math.max(p.dur,4);_visualOffset+=(vd-p.dur);}});}
+function deshacer(){if(!historia.length)return;pasos=historia.pop();qIdx=pasos.filter(p=>p.tipo==='q').length;recalcOffset();dibujar();updSTD();}
+function resetear(){if(!confirm('¿Resetear la curva completa?'))return;historia=[];pasos=[];qIdx=0;_visualOffset=0;dibujar();updSTD();}
+
+function dibujar(){
+  const svg=document.getElementById('svgC');const{w,h}=dims();const sw=svgW();
+  svg.setAttribute('width',sw);svg.setAttribute('height',h);svg.innerHTML=buildSVG(sw,h);
+  svg.querySelectorAll('.temp-label').forEach(g=>{
+    g.addEventListener('mousedown',e=>{
+      e.preventDefault();
+      const key=g.dataset.key;
+      const rect=svg.getBoundingClientRect();
+      const onMove=ev=>{
+        const x=(ev.clientX-rect.left);
+        const y=(ev.clientY-rect.top);
+        _tempPos[key]={x,y};
+        dibujar();
+      };
+      const onUp=()=>{window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);};
+      window.addEventListener('mousemove',onMove);
+      window.addEventListener('mouseup',onUp);
+    });
+  });
+  svg.querySelectorAll('.op-label').forEach(g=>{
+    g.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const key=g.dataset.key;
+      const startX=e.clientX,startY=e.clientY;
+      const curDX=(_opPos[key]&&_opPos[key].dx)||0;
+      const curDY=(_opPos[key]&&_opPos[key].dy)||0;
+      const onMove=ev=>{
+        _opPos[key]={dx:curDX+(ev.clientX-startX),dy:curDY+(ev.clientY-startY)};
+        dibujar();
+      };
+      const onUp=()=>{window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);};
+      window.addEventListener('mousemove',onMove);
+      window.addEventListener('mouseup',onUp);
+    });
+  });
+  const legSvg=svg.querySelector('.leg-svg');
+  if(legSvg){
+    legSvg.addEventListener('mousedown',e=>{
+      e.preventDefault();e.stopPropagation();
+      const startX=e.clientX,startY=e.clientY;
+      const curX=_legPos.x||0,curY=_legPos.y||0;
+      const onMove=ev=>{
+        _legPos.x=curX+(ev.clientX-startX);
+        _legPos.y=curY+(ev.clientY-startY);
+        dibujar();
+      };
+      const onUp=()=>{window.removeEventListener('mousemove',onMove);window.removeEventListener('mouseup',onUp);};
+      window.addEventListener('mousemove',onMove);
+      window.addEventListener('mouseup',onUp);
+    });
+  }
+}
+
+function buildSVG(w,h){
+  const ph=h-ML.top-ML.bottom;let o='<g font-family="Arial, sans-serif">';
+  const nom=document.getElementById('h-nom').value||'';
+  const meta=[document.getElementById('h-num').value,document.getElementById('h-ver').value,document.getElementById('h-tipo').value,document.getElementById('h-fecha').value].filter(Boolean).join(' | ');
+  if(nom&&!window._sinHeader)o+=`<text x="${ML.left}" y="15" font-size="11" font-weight="bold" fill="#222">${nom}</text>`;
+  if(meta&&!window._sinHeader)o+=`<text x="${w-ML.right}" y="15" text-anchor="end" font-size="8.5" fill="#555">${meta}</text>`;
+  if(_sede&&!window._sinHeader)o+=`<text x="${ML.left}" y="24" font-size="7.5" font-weight="bold" fill="#1a5276">📍 ${_sede}${_bodega?' · '+_bodega:''}</text>`;
+
+  for(let i=0;i<=14;i++){const t=i*10,y=ty(t);if(t%20===0){}} // Grid quitado
+  const maxM=totMin();
+
+  // Eje Y quitado
+  o+=`<line x1="${ML.left}" y1="${(ML.top+ph).toFixed(1)}" x2="${(w-ML.right).toFixed(1)}" y2="${(ML.top+ph).toFixed(1)}" stroke="#111" stroke-width="2.2"/>`;
+
+  // Números eje Y quitados
+  const yAxisLbl=ML.top+ph+15;
+  const curva=getCurva();
+  if(curva.length>1){const pts=curva.map(p=>`${tx(p.min).toFixed(1)},${ty(p.temp).toFixed(1)}`).join(' ');o+=`<polyline fill="none" stroke="#111" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" points="${pts}"/>`;}
+  o+=`<circle cx="${tx(0).toFixed(1)}" cy="${ty(0).toFixed(1)}" r="3" fill="#222"/>`;
+
+  const yB=ML.top+ph,BAND_Y=yB+18,ROW=18,yT0=BAND_Y,yT1=yT0+ROW,yTbot=yT1+ROW;
+
+  o+=`<rect x="${ML.left}" y="${yT0.toFixed(1)}" width="${(w-ML.left-ML.right).toFixed(1)}" height="${(yTbot-yT0).toFixed(1)}" fill="#fafafa" stroke="#999" stroke-width=".6"/>`;
+  o+=`<line x1="${ML.left}" y1="${yT1.toFixed(1)}" x2="${(w-ML.right).toFixed(1)}" y2="${yT1.toFixed(1)}" stroke="#bbb" stroke-width=".5"/>`;
+
+  const qs=pasos.filter(p=>p.tipo==='q');
+  if(qs.length&&!window._sinLeyenda){
+    const rH=18,legW=200,legX=(w-ML.right-legW-3)+_legPos.x,legY=(ML.top+3)+_legPos.y;
+    o+=`<g class="leg-svg" style="cursor:move"><rect x="${legX}" y="${legY}" width="${legW}" height="${qs.length*rH+8}" fill="white" stroke="#888" stroke-width="1" rx="2"/>`;
+    qs.forEach((q,i)=>{const ry=legY+4+i*rH;o+=`<rect x="${legX+3}" y="${ry}" width="16" height="14" rx="1" fill="${q.color}"/>`;o+=`<text x="${legX+23}" y="${ry+11}" font-size="14" fill="#111" font-weight="900">${q.idx}. ${q.prod.length>20?q.prod.slice(0,20)+'…':q.prod}</text>`;});
+    o+=`</g>`;
+  }
+
+  const slotMap={};
+  function getSlot(minPos){const k=Math.round(minPos*10);slotMap[k]=(slotMap[k]||0);return slotMap[k]++;}
+  let ch0=[{min:0,temp:0}];
+  pasos.forEach(paso=>{const pO=ch0[ch0.length-1];if(['ll','vc','q','op'].includes(paso.tipo))getSlot(pO.min);ch0=ch0.concat(paso.puntos);});
+  Object.keys(slotMap).forEach(k=>slotMap[k]=0);
+
+  let ch=[{min:0,temp:0}];
+  pasos.forEach((paso,pi)=>{
+    const pO=ch[ch.length-1];
+
+    if(paso.tipo==='tr'){
+      const p1=paso.puntos[0],xA=tx(pO.min),xB=tx(p1.min),yPico=ty(p1.temp);
+      if(!paso.soloCirc){
+        o+=`<line x1="${xB.toFixed(1)}" y1="${yPico.toFixed(1)}" x2="${xB.toFixed(1)}" y2="${yB.toFixed(1)}" stroke="#666" stroke-width="1.3" stroke-dasharray="5,3"/>`;
+      }
+      o+=`<line x1="${xA.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xA.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#bbb" stroke-width=".5"/>`;
+      if(paso.tR>0){
+        const xMid=(xA+xB)/2;
+        o+=`<text x="${xMid.toFixed(1)}" y="${((yT0+yT1)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${paso.grad}</text>`;
+        o+=`<text x="${xMid.toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${Math.round(paso.tR)}</text>`;
+      }
+      if(!paso.soloCirc){
+        const tempKey='temp_'+pi;
+        const defX=xB,defY=Math.max(yPico-15, ML.top+15);
+        const tx_=(_tempPos[tempKey]&&_tempPos[tempKey].x)||defX;
+        const ty_=(_tempPos[tempKey]&&_tempPos[tempKey].y)||defY;
+        o+=`<g class="temp-label" data-key="${tempKey}" style="cursor:move"><rect x="${(tx_-22).toFixed(1)}" y="${(ty_-12).toFixed(1)}" width="44" height="18" fill="white" stroke="#888" stroke-width=".8" rx="3" opacity=".95"/><text x="${tx_.toFixed(1)}" y="${(ty_+2).toFixed(1)}" text-anchor="middle" font-size="16" font-weight="900" fill="#111">${p1.temp}°</text></g>`;
+      }
+      if(paso.tS>0){
+        const xIni=paso.soloCirc?xA:xB;
+        const xC=paso.puntos.length>1?tx(paso.puntos[1].min):tx(pO.min+paso.tR+paso.tS);
+        if(!paso.soloCirc)o+=`<line x1="${xB.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xB.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#bbb" stroke-width=".5"/>`;
+        const xMidS=(xIni+xC)/2;
+        const tSstr=Number.isInteger(paso.tS)?String(paso.tS):paso.tS.toFixed(1).replace(/\.0$/,'');
+        o+=`<text x="${xMidS.toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${tSstr}</text>`;
+      }
+    }
+
+    if(paso.tipo==='ll'){
+      const slot=getSlot(pO.min);
+      const xA=tx(paso.puntos[0].min),xB=tx(paso.puntos[1].min),llTemp=paso.llTemp||paso.puntos[0].temp,yF=ty(llTemp),cx=(xA+xB)/2;
+      const maxW=Math.max(xB-xA-4,12),boxW=Math.min(40,maxW),boxH=22;
+      const yBoxBot=yF-5,yBoxTop=yBoxBot-boxH;
+      o+=`<rect x="${(cx-boxW/2).toFixed(1)}" y="${yBoxTop.toFixed(1)}" width="${boxW}" height="${boxH}" rx="2" fill="white" stroke="#444" stroke-width="1.3"/>`;
+      o+=`<text x="${cx.toFixed(1)}" y="${(yBoxTop+boxH/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="${boxW<24?11:13}" font-weight="900" fill="#111">${paso.lbl}</text>`;
+      if(paso.lblMx)o+=`<text x="${cx.toFixed(1)}" y="${(yF+8).toFixed(1)}" text-anchor="middle" font-size="8" fill="#666">${paso.lblMx}</text>`;
+      o+=`<line x1="${xA.toFixed(1)}" y1="${yF.toFixed(1)}" x2="${xA.toFixed(1)}" y2="${yB.toFixed(1)}" stroke="#111" stroke-width="3" stroke-linecap="round"/>`;
+      o+=`<line x1="${xA.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xA.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#888" stroke-width="1.2"/>`;
+      o+=`<rect x="${xA.toFixed(1)}" y="${yT0.toFixed(1)}" width="${(xB-xA).toFixed(1)}" height="${(yTbot-yT0).toFixed(1)}" fill="#d6eaf8"/>`;
+      o+=`<text x="${cx.toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${paso.durMin}</text>`;
+    }
+
+    if(paso.tipo==='vc'){
+      const slot=getSlot(pO.min),xV=tx(pO.min),pF=paso.puntos[paso.puntos.length-1],xB=tx(pF.min);
+      o+=`<line x1="${xV.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xV.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#888" stroke-width="1.2"/>`;
+      o+=`<rect x="${xV.toFixed(1)}" y="${yT0.toFixed(1)}" width="${(xB-xV).toFixed(1)}" height="${(yTbot-yT0).toFixed(1)}" fill="#ecf0f1"/>`;
+      o+=`<text x="${((xV+xB)/2).toFixed(1)}" y="${((yT0+yT1)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${paso.lbl}</text>`;
+      o+=`<text x="${((xV+xB)/2).toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${paso.durMin}</text>`;
+    }
+
+    if(paso.tipo==='enj'){
+      const pts=paso.puntos,xA=tx(pts[0].min),xFin=tx(pts[pts.length-1].min),xVac=tx(pts[pts.length-2].min);
+      function tempEnX(x){const m=(x-ML.left)/PX_PER_MIN;for(let i=0;i<pts.length-1;i++){if(m>=pts[i].min-0.01&&m<=pts[i+1].min+0.01){const d=pts[i+1].min-pts[i].min,frac=d===0?1:(m-pts[i].min)/d;return pts[i].temp+(pts[i+1].temp-pts[i].temp)*Math.max(0,Math.min(1,frac));}}return 0;}
+      let poly=`${xA.toFixed(1)},${yB.toFixed(1)} `;pts.forEach(p=>poly+=`${tx(p.min).toFixed(1)},${ty(p.temp).toFixed(1)} `);poly+=`${xFin.toFixed(1)},${yB.toFixed(1)}`;
+      o+=`<polygon points="${poly}" fill="#aed6f1" opacity=".22"/>`;
+      for(let xi=xA+2;xi<xVac-1;xi+=7){const yTop=ty(tempEnX(xi));if(yTop<yB)o+=`<line x1="${xi.toFixed(1)}" y1="${yTop.toFixed(1)}" x2="${xi.toFixed(1)}" y2="${yB.toFixed(1)}" stroke="#2471a3" stroke-width="2" stroke-dasharray="6,5" opacity=".5"/>`;}
+      let yMaxTemp=0;pts.forEach(p=>{if(p.temp>yMaxTemp)yMaxTemp=p.temp;});
+      const yWLabel=ty(yMaxTemp)+18,xMid=(xA+xVac)/2;
+      o+=`<text x="${xMid.toFixed(1)}" y="${yWLabel.toFixed(1)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a5276">${paso.llT}</text>`;
+      o+=`<text x="${xMid.toFixed(1)}" y="${(yB-8).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a5276">${paso.vcT}</text>`;
+      o+=`<line x1="${xA.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xA.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#888" stroke-width="1.2"/>`;
+      o+=`<rect x="${xA.toFixed(1)}" y="${yT0.toFixed(1)}" width="${(xFin-xA).toFixed(1)}" height="${(yTbot-yT0).toFixed(1)}" fill="#aed6f1"/>`;
+      if(paso.eG&&paso.eTi&&paso.eT&&paso.eT!==paso.eTi)o+=`<text x="${((xA+xFin)/2).toFixed(1)}" y="${((yT0+yT1)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${paso.eG}</text>`;
+      let tEnj=paso.eS||0;if(paso.eG&&paso.eTi!=null&&paso.eT&&paso.eT!==paso.eTi)tEnj+=Math.abs(paso.eT-paso.eTi)/paso.eG;
+      const tStr=String(Math.round(tEnj));
+      o+=`<text x="${((xA+xFin)/2).toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${tStr}</text>`;
+    }
+
+    if(paso.tipo==='q'){
+      const xQ=tx(pO.min),yQ=ty(pO.temp),pF=paso.puntos[0],xFin=tx(pF.min),segW=Math.max(xFin-xQ, 4*PX_PER_MIN),BOX_H=22,PROG_H=18,yBoxBot=yQ-5,yBoxTop=yBoxBot-BOX_H;
+      if(paso.sub==='dosif'&&paso.prog!=null){const progTop=yBoxBot;o+=`<rect x="${xQ.toFixed(1)}" y="${progTop.toFixed(1)}" width="${segW.toFixed(1)}" height="${PROG_H}" rx="0" fill="white" stroke="#999" stroke-width=".8"/>`;o+=`<text x="${(xQ+segW/2).toFixed(1)}" y="${(progTop+PROG_H/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="bold" fill="#333">${paso.prog}%</text>`;}
+      o+=`<rect x="${xQ.toFixed(1)}" y="${yBoxTop.toFixed(1)}" width="${segW.toFixed(1)}" height="${BOX_H}" rx="3" fill="${paso.color}" stroke="#111" stroke-width=".7" opacity=".95"/>`;
+      o+=`<text x="${(xQ+segW/2).toFixed(1)}" y="${(yBoxTop+BOX_H/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="bold" fill="#111">${paso.idx}</text>`;
+      o+=`<line x1="${xQ.toFixed(1)}" y1="${yQ.toFixed(1)}" x2="${xQ.toFixed(1)}" y2="${yB.toFixed(1)}" stroke="#666" stroke-width="1.3" stroke-dasharray="5,3"/>`;
+      o+=`<line x1="${xQ.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xQ.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#888" stroke-width="1.2"/>`;
+      const rCol=paso.sub==='dosif'?'#d2b4de':'#a9dfbf';
+      o+=`<rect x="${xQ.toFixed(1)}" y="${yT0.toFixed(1)}" width="${segW.toFixed(1)}" height="${(yTbot-yT0).toFixed(1)}" fill="${rCol}" opacity=".6"/>`;
+      if(paso.sub==='dosif')o+=`<text x="${(xQ+segW/2).toFixed(1)}" y="${((yT1+yTbot)/2).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="18" fill="#111" font-weight="900">${Math.round(paso.dur)}</text>`;
+    }
+
+    if(paso.tipo==='op'){
+      const slot=getSlot(pO.min),xO=tx(pO.min),yO=ty(pO.temp),cxDef=xO+slot*SW;
+      const OC={PH:'#85c1e9',TONO:'#82e0aa',MUESTRA:'#f8c471'},c=OC[paso.lbl]||'#bbb';
+      const letras=paso.lbl.split(''),nL=letras.length,boxH=nL*14+10,OFFSET=50;
+      const opKey='op_'+pi;
+      const opDX=(_opPos[opKey]&&_opPos[opKey].dx)||0;
+      const opDY=(_opPos[opKey]&&_opPos[opKey].dy)||0;
+      const cx=cxDef+opDX;
+      const yBase=yO+opDY;
+      o+=`<line x1="${xO.toFixed(1)}" y1="${yO.toFixed(1)}" x2="${cx.toFixed(1)}" y2="${(yBase-OFFSET).toFixed(1)}" stroke="#333" stroke-width="1"/>`;
+      o+=`<g class="op-label" data-key="${opKey}" style="cursor:move">`;
+      o+=`<rect x="${(cx-11).toFixed(1)}" y="${(yBase-boxH-OFFSET).toFixed(1)}" width="22" height="${boxH}" rx="3" fill="${c}" stroke="#333" stroke-width="1"/>`;
+      o+=`<polygon points="${cx.toFixed(1)},${(yBase-OFFSET).toFixed(1)} ${(cx-9).toFixed(1)},${(yBase-OFFSET-10).toFixed(1)} ${(cx+9).toFixed(1)},${(yBase-OFFSET-10).toFixed(1)}" fill="${c}" stroke="#333" stroke-width="1"/>`;
+      letras.forEach((l,i)=>o+=`<text x="${cx.toFixed(1)}" y="${(yBase-boxH-OFFSET+12+i*14).toFixed(1)}" text-anchor="middle" font-size="14" font-weight="900" fill="#111">${l}</text>`);
+      o+=`</g>`;
+      o+=`<line x1="${xO.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xO.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#666" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+    }
+    ch=ch.concat(paso.puntos);
+  });
+
+  getCurva().slice(1).forEach(p=>o+=`<circle cx="${tx(p.min).toFixed(1)}" cy="${ty(p.temp).toFixed(1)}" r="2.5" fill="#222"/>`);
+  o+=`<text x="${(ML.left-45).toFixed(1)}" y="${((yT0+yT1)/2+3).toFixed(1)}" font-size="11" fill="#666" font-weight="bold">|C/M</text>`;
+  o+=`<text x="${(ML.left-45).toFixed(1)}" y="${((yT1+yTbot)/2+3).toFixed(1)}" font-size="11" fill="#666" font-weight="bold">MIN</text>`;
+  pasos.forEach((paso,idx)=>{
+    if(paso.tipo==='vc')return;
+    let hayMasNoVc=false;
+    for(let j=idx+1;j<pasos.length;j++){if(pasos[j].tipo!=='vc'){hayMasNoVc=true;break;}}
+    if(!hayMasNoVc)return;
+    const ptsP=paso.puntos||[];
+    if(ptsP.length){
+      const lastPt=ptsP[ptsP.length-1];
+      const xSep=tx(lastPt.min);
+      const ySep=ty(lastPt.temp);
+      o+=`<line x1="${xSep.toFixed(1)}" y1="${(ySep+6).toFixed(1)}" x2="${xSep.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#555" stroke-width="1.4" stroke-dasharray="5,4" opacity=".75"/>`;
+    }
+  });
+  const xEnd=tx(totMin());
+  o+=`<line x1="${xEnd.toFixed(1)}" y1="${yT0.toFixed(1)}" x2="${xEnd.toFixed(1)}" y2="${yTbot.toFixed(1)}" stroke="#888" stroke-width=".6"/>`;
+  o+='</g>';
+  return o;
+}
+
+function digitalizar(){
+  const LOGO_B64='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0MDAgMTMwIiB3aWR0aD0iNDAwIiBoZWlnaHQ9IjEzMCI+CjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9ImJnIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj4KPHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzdmYTc4OSIvPgo8c3RvcCBvZmZzZXQ9IjEwMCUiIHN0b3AtY29sb3I9IiM1YTg1NjgiLz4KPC9saW5lYXJHcmFkaWVudD4KPC9kZWZzPgo8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjEzMCIgcng9IjE0IiBmaWxsPSJ1cmwoI2JnKSIvPgo8dGV4dCB4PSIyMDAiIHk9IjkyIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssIEFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9Ijc4IiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSJ3aGl0ZSIgbGV0dGVyLXNwYWNpbmc9Ii0yIj50ZWtzPC90ZXh0Pgo8dGV4dCB4PSIyMDAiIHk9IjExNSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjEwIiBmaWxsPSJ3aGl0ZSIgb3BhY2l0eT0iMC44NSIgbGV0dGVyLXNwYWNpbmc9IjQiPk1BTlVGQUNUVVJBUyBFTElPVCBTLkEuUzwvdGV4dD4KPC9zdmc+';
+  const srcSvg=document.getElementById('svgC');
+  const contentW=Math.max(totMin()*PX_PER_MIN+ML.left+ML.right+50, 600);
+  const innerH=dims().h;
+  let maxTemp=0;getCurva().forEach(p=>{if(p.temp>maxTemp)maxTemp=p.temp;});
+  maxTemp=Math.min(maxTemp+15,TMAX);
+  const vbTop=Math.max(0,ty(maxTemp)-25);
+  const vbBot=innerH-50;
+  const vbH=vbBot-vbTop;
+  const esc=s=>String(s).replace(/[<>&'"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&apos;','"':'&quot;'}[c]));
+  const nom=esc(document.getElementById('h-nom').value.trim());
+  const num=esc(document.getElementById('h-num').value.trim());
+  const ver=esc(document.getElementById('h-ver').value.trim());
+  const tipo=esc(document.getElementById('h-tipo').value);
+  const fecha=document.getElementById('h-fecha').value;
+  if(!nom||!num||!ver){alert('Faltan datos obligatorios:\n- Nombre de receta\n- Número\n- Versión');return;}
+  if(!_sede){alert('Selecciona la sede (Calle 80 o Calle 19) antes de digitalizar.');return;}
+  if(_sede==='Calle 80'&&!_bodega){alert('Selecciona la bodega.');return;}
+
+  window._sinHeader=true;window._sinLeyenda=true;dibujar();
+  const innerSvgContent=srcSvg.innerHTML;
+  window._sinHeader=false;window._sinLeyenda=false;dibujar();
+  
+  const qsList=pasos.filter(p=>p.tipo==='q');
+  let legendHTML='';
+  if(qsList.length){
+    legendHTML='<div class="leg-title">QUÍMICOS</div>';
+    qsList.forEach(q=>{
+      legendHTML+=`<div class="leg-row"><div class="leg-sw" style="background:${q.color}"></div><div class="leg-tx">${q.idx}. ${q.prod}</div></div>`;
+    });
+  }
+
+  const PAGE_W=7200,PAGE_H=3200,PAD=30,HEADER_H=240,FOOTER_H=220;
+  const fechaTxt=fecha?new Date(fecha+'T00:00:00').toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'}):new Date().toLocaleDateString('es-CO');
+  const sedeTxt=_sede==='Calle 80'?`${_sede} · ${_bodega}`:_sede;
+  const stdTxt=document.getElementById('std-disp').textContent;
+  const filePrefix=num.replace(/\s+/g,'_');
+  const win=window.open('','_blank');
+  if(!win){alert('Permite las ventanas emergentes.');return;}
+
+  const curvaX0=PAD+10,curvaY0=PAD+HEADER_H+10;
+  const curvaW0=PAGE_W-PAD*2-20,curvaH0=PAGE_H-PAD*2-HEADER_H-FOOTER_H-20;
+
+  win.document.write(`<!DOCTYPE html><html><head><title>${nom} - Curva ${num} ${tipo}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#5a5a5a;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px;font-family:Arial,sans-serif;min-height:100vh}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:rgba(0,0,0,.4);padding:10px 14px;border-radius:6px}
+.toolbar h3{color:white;font-size:13px;font-weight:400;margin-right:14px;letter-spacing:.4px}
+.btn{padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer;background:#27ae60;color:white;border:none;border-radius:4px}
+.btn.blue{background:#2980b9}
+.btn.grey{background:#7f8c8d}
+.btn:hover{filter:brightness(1.1)}
+.hint{color:#fdfdfd;font-size:11px;background:rgba(0,0,0,.3);padding:5px 11px;border-radius:4px}
+#page-wrap{background:#aaa;padding:14px;border-radius:6px;box-shadow:0 0 22px rgba(0,0,0,.5);overflow:auto;max-width:calc(100vw - 60px);max-height:calc(100vh - 180px)}
+#page-scale{transform-origin:top left}
+#page{position:relative;background:white;width:${PAGE_W}px;height:${PAGE_H}px;border:1px solid #444}
+.frame{position:absolute;left:${PAD}px;top:${PAD}px;right:${PAD}px;bottom:${PAD}px;border:1.5px solid #333;pointer-events:none}
+.hdr{position:absolute;left:${PAD+1}px;top:${PAD+1}px;right:${PAD+1}px;height:${HEADER_H}px;border-bottom:1.5px solid #333;display:flex;align-items:stretch}
+.hdr-logo{width:600px;padding:10px 22px;display:flex;align-items:center;justify-content:center;border-right:1px solid #aaa}
+.hdr-logo img{max-width:560px;max-height:150px;object-fit:contain}
+.hdr-title{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px}
+.hdr-title .ttl{font-family:'Arial Black','Arial',sans-serif;font-size:56px;font-weight:900;color:#111;letter-spacing:2px;text-transform:uppercase}
+.hdr-title .sub{font-family:Arial,sans-serif;font-size:12px;color:#1a5276;margin-top:6px;font-weight:600;letter-spacing:.5px}
+.hdr-fecha{width:440px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;border-left:1px solid #aaa}
+.hdr-fecha .lbl{font-size:32px;color:#666;letter-spacing:4px;margin-top:10px;font-weight:bold}
+.hdr-fecha .val{font-size:56px;font-weight:900;color:#111}
+#curva-mov{position:absolute;left:${curvaX0}px;top:${curvaY0}px;width:${curvaW0}px;height:${curvaH0}px;cursor:move;border:1.5px dashed transparent}
+#curva-mov:hover,#curva-mov.sel{border-color:#3498db}
+#curva-mov svg{width:100%;height:100%;display:block}
+.handle{position:absolute;width:14px;height:14px;background:#3498db;border:2px solid white;border-radius:50%;display:none;z-index:10}
+#curva-mov:hover .handle,#curva-mov.sel .handle{display:block}
+.handle.nw{top:-7px;left:-7px;cursor:nwse-resize}.handle.ne{top:-7px;right:-7px;cursor:nesw-resize}
+.handle.sw{bottom:-7px;left:-7px;cursor:nesw-resize}.handle.se{bottom:-7px;right:-7px;cursor:nwse-resize}
+.handle.n{top:-7px;left:50%;margin-left:-7px;cursor:ns-resize;border-radius:3px;width:18px}
+.handle.s{bottom:-7px;left:50%;margin-left:-7px;cursor:ns-resize;border-radius:3px;width:18px}
+.handle.e{top:50%;right:-7px;margin-top:-7px;cursor:ew-resize;border-radius:3px;height:18px}
+.handle.w{top:50%;left:-7px;margin-top:-7px;cursor:ew-resize;border-radius:3px;height:18px}
+.ftr{position:absolute;left:${PAD+1}px;right:${PAD+1}px;bottom:${PAD+1}px;height:${FOOTER_H}px;border-top:1.5px solid #333;display:flex;align-items:stretch}
+.ftr-ver{width:580px;padding:18px 32px;display:flex;flex-direction:column;justify-content:center;border-right:1px solid #aaa}
+.ftr-ver .v1{font-size:48px;font-weight:900;color:#111;letter-spacing:2px}
+.ftr-ver .v2{font-size:34px;color:#444;margin-top:8px;font-weight:bold}
+.ftr-curva{flex:1;display:flex;align-items:center;justify-content:center}
+.ftr-curva .ct{font-family:'Brush Script MT','Lucida Handwriting',cursive,serif;font-size:120px;font-weight:bold;color:#1a5276;letter-spacing:4px;text-shadow:1px 1px 0 rgba(26,82,118,.15);margin-top:10px}
+.ftr-std{width:460px;padding:14px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-left:1px solid #aaa}
+.ftr-std .lbl{font-size:40px;font-weight:900;color:#333;letter-spacing:2px}
+.ftr-std .val{font-size:76px;font-weight:bold;color:#c0392b;margin-top:5px;font-family:'Courier New',monospace}
+#leg-mov{position:absolute;background:rgba(255,255,255,.85);border:2px dashed transparent;border-radius:6px;padding:14px 18px;cursor:move;min-width:220px;min-height:100px;user-select:none;font-family:Arial,sans-serif;display:flex;flex-direction:column;justify-content:flex-start}
+#leg-mov:hover,#leg-mov.sel{border-color:#3498db;background:rgba(255,255,255,.95)}
+#leg-mov.sel{border-color:#2980b9;border-style:dashed}
+#leg-mov .leg-title{font-size:22px;font-weight:900;color:#1a5276;margin-bottom:10px;text-align:center;letter-spacing:2px;border-bottom:2px solid #ddd;padding-bottom:6px}
+#leg-mov .leg-row{display:flex;align-items:center;gap:12px;margin:6px 0}
+#leg-mov .leg-sw{width:32px;height:26px;border-radius:3px;flex-shrink:0;border:1px solid #555}
+#leg-mov .leg-tx{font-size:22px;font-weight:bold;color:#111;line-height:1.2}
+#leg-mov .handle{display:block !important;position:absolute;width:40px;height:40px;background:#e74c3c;border:4px solid white;z-index:1000;border-radius:6px;box-shadow:0 3px 8px rgba(0,0,0,.5);opacity:1;pointer-events:auto}
+#leg-mov.sel .handle{background:#27ae60}
+#leg-mov .handle.nw{top:-20px;left:-20px;cursor:nwse-resize}
+#leg-mov .handle.ne{top:-20px;right:-20px;cursor:nesw-resize}
+#leg-mov .handle.sw{bottom:-20px;left:-20px;cursor:nesw-resize}
+#leg-mov .handle.se{bottom:-20px;right:-20px;cursor:nwse-resize}
+#leg-mov .handle.n{top:-20px;left:50%;margin-left:-20px;cursor:ns-resize;width:50px;border-radius:8px}
+#leg-mov .handle.s{bottom:-20px;left:50%;margin-left:-20px;cursor:ns-resize;width:50px;border-radius:8px}
+#leg-mov .handle.e{top:50%;right:-20px;margin-top:-20px;cursor:ew-resize;height:50px;border-radius:8px}
+#leg-mov .handle.w{top:50%;left:-20px;margin-top:-20px;cursor:ew-resize;height:50px;border-radius:8px}
+</style></head><body>
+<div class="toolbar">
+  <h3>MANUFACTURAS ELIOT S.A.S — TEKSTELAS</h3>
+  <button class="btn" onclick="dl('jpeg')">💾 Descargar JPG</button>
+  <button class="btn blue" onclick="dl('png')">🖼 Descargar PNG</button>
+  <button class="btn grey" onclick="reset()">↺ Centrar curva</button>
+  <button class="btn" style="background:#8e44ad" onclick="zoomPage(1.15)">🔍+</button>
+  <button class="btn" style="background:#8e44ad" onclick="zoomPage(1/1.15)">🔍−</button>
+  <button class="btn" style="background:#7f8c8d" onclick="zoomPage(0)">🔍 Ajustar</button>
+</div>
+<div class="hint">🖱 Arrastra la curva · Esquinas azules = redimensionar · 🔍 Zoom a toda la plantilla</div>
+<div id="page-wrap"><div id="page-scale"><div id="page">
+  <div class="frame"></div>
+  <div class="hdr">
+    <div class="hdr-logo"><img src="${LOGO_B64}" alt="Tekstelas"/></div>
+    <div class="hdr-title"><div class="ttl">${nom.toUpperCase()}</div></div>
+    <div class="hdr-fecha"><div class="val">${fechaTxt}</div><div class="lbl">FECHA</div></div>
+  </div>
+  <div id="curva-mov" style="left:${curvaX0}px;top:${curvaY0}px;width:${curvaW0}px;height:${curvaH0}px">
+    <svg viewBox="0 ${vbTop} ${contentW} ${vbH}" preserveAspectRatio="none">${innerSvgContent}</svg>
+    <div class="handle nw"></div><div class="handle ne"></div><div class="handle sw"></div><div class="handle se"></div>
+    <div class="handle n"></div><div class="handle s"></div><div class="handle e"></div><div class="handle w"></div>
+  </div>
+  ${qsList.length?`<div id="leg-mov" style="left:${PAGE_W-PAD-450}px;top:${PAD+HEADER_H+30}px;width:430px">${legendHTML}<div class="handle nw"></div><div class="handle ne"></div><div class="handle sw"></div><div class="handle se"></div><div class="handle n"></div><div class="handle s"></div><div class="handle e"></div><div class="handle w"></div></div>`:''}
+  <div class="ftr">
+    <div class="ftr-ver"><div class="v1">VERSIÓN: ${ver}</div><div class="v2">N° ${num} · ${sedeTxt} · ${tipo.toUpperCase()}</div></div>
+    <div class="ftr-curva"><div class="ct">Curva ${num} ${tipo}</div></div>
+    <div class="ftr-std"><div class="lbl">STD</div><div class="val">${stdTxt}</div></div>
+  </div>
+</div></div></div>
+<scr`+`ipt>
+const PAGE_W=${PAGE_W},PAGE_H=${PAGE_H};
+let _pzoom=1;
+function fitToViewport(){const wrap=document.getElementById('page-wrap'),scale=document.getElementById('page-scale');const availW=wrap.clientWidth-30,availH=window.innerHeight-220;const sx=availW/PAGE_W,sy=availH/PAGE_H,s=Math.min(sx,sy,1)*_pzoom;scale.style.transform='scale('+s+')';scale.style.width=(PAGE_W*s)+'px';scale.style.height=(PAGE_H*s)+'px';wrap.dataset.scale=s;}
+function zoomPage(f){if(f===0){_pzoom=1;}else{_pzoom=Math.max(0.3,Math.min(_pzoom*f,4));}fitToViewport();}
+window.addEventListener('load',()=>{fitToViewport();applyLegScale();});window.addEventListener('resize',fitToViewport);
+const curva=document.getElementById('curva-mov');let mode=null,startX,startY,startL,startT,startW,startH;
+curva.addEventListener('mousedown',e=>{curva.classList.add('sel');const t=e.target;if(t.classList.contains('handle')){['nw','ne','sw','se','n','s','e','w'].forEach(d=>{if(t.classList.contains(d))mode=d;});}else{mode='move';}const scale=parseFloat(document.getElementById('page-wrap').dataset.scale)||1;startX=e.clientX/scale;startY=e.clientY/scale;startL=parseFloat(curva.style.left);startT=parseFloat(curva.style.top);startW=curva.offsetWidth;startH=curva.offsetHeight;e.preventDefault();e.stopPropagation();});
+window.addEventListener('mousemove',e=>{if(!mode)return;const scale=parseFloat(document.getElementById('page-wrap').dataset.scale)||1;const dx=e.clientX/scale-startX,dy=e.clientY/scale-startY;if(mode==='move'){curva.style.left=(startL+dx)+'px';curva.style.top=(startT+dy)+'px';}else if(mode==='se'){curva.style.width=Math.max(150,startW+dx)+'px';curva.style.height=Math.max(80,startH+dy)+'px';}else if(mode==='sw'){curva.style.left=(startL+dx)+'px';curva.style.width=Math.max(150,startW-dx)+'px';curva.style.height=Math.max(80,startH+dy)+'px';}else if(mode==='ne'){curva.style.top=(startT+dy)+'px';curva.style.width=Math.max(150,startW+dx)+'px';curva.style.height=Math.max(80,startH-dy)+'px';}else if(mode==='nw'){curva.style.left=(startL+dx)+'px';curva.style.top=(startT+dy)+'px';curva.style.width=Math.max(150,startW-dx)+'px';curva.style.height=Math.max(80,startH-dy)+'px';}else if(mode==='n'){curva.style.top=(startT+dy)+'px';curva.style.height=Math.max(80,startH-dy)+'px';}else if(mode==='s'){curva.style.height=Math.max(80,startH+dy)+'px';}else if(mode==='e'){curva.style.width=Math.max(150,startW+dx)+'px';}else if(mode==='w'){curva.style.left=(startL+dx)+'px';curva.style.width=Math.max(150,startW-dx)+'px';}});
+window.addEventListener('mouseup',()=>{mode=null;legMode=null;});
+document.body.addEventListener('click',e=>{if(!curva.contains(e.target))curva.classList.remove('sel');const leg=document.getElementById('leg-mov');if(leg&&!leg.contains(e.target))leg.classList.remove('sel');});
+const leg=document.getElementById('leg-mov');let legMode=null,lsX,lsY,lsL,lsT,lsW,lsH;
+function applyLegScale(){
+  if(!leg)return;
+  const baseW=430,baseH=300;
+  const curW=leg.offsetWidth,curH=leg.offsetHeight;
+  const scaleW=curW/baseW,scaleH=curH/baseH;
+  const scale=Math.max(0.4,Math.min((scaleW+scaleH)/2,3.5));
+  const title=leg.querySelector('.leg-title');
+  if(title)title.style.fontSize=(22*scale)+'px';
+  leg.querySelectorAll('.leg-tx').forEach(el=>el.style.fontSize=(22*scale)+'px');
+  leg.querySelectorAll('.leg-sw').forEach(el=>{el.style.width=(32*scale)+'px';el.style.height=(26*scale)+'px';});
+  leg.dataset.scale=scale;
+}
+if(leg){
+  if(window.ResizeObserver){
+    const ro=new ResizeObserver(()=>applyLegScale());
+    ro.observe(leg);
+  }
+  leg.addEventListener('mousedown',e=>{
+    leg.classList.add('sel');
+    const handleEl=e.target.closest('.handle');
+    if(handleEl){
+      ['nw','ne','sw','se','n','s','e','w'].forEach(d=>{if(handleEl.classList.contains(d))legMode=d;});
+    }else{
+      const r=leg.getBoundingClientRect();
+      if(e.clientX>r.right-22&&e.clientY>r.bottom-22)return;
+      legMode='move';
+    }
+    const sc=parseFloat(document.getElementById('page-wrap').dataset.scale)||1;
+    lsX=e.clientX/sc;lsY=e.clientY/sc;
+    lsL=parseFloat(leg.style.left);lsT=parseFloat(leg.style.top);
+    lsW=leg.offsetWidth;lsH=leg.offsetHeight;
+    e.preventDefault();e.stopPropagation();
+  });
+  window.addEventListener('mousemove',e=>{
+    if(!legMode)return;
+    const sc=parseFloat(document.getElementById('page-wrap').dataset.scale)||1;
+    const dx=e.clientX/sc-lsX,dy=e.clientY/sc-lsY;
+    if(legMode==='move'){leg.style.left=(lsL+dx)+'px';leg.style.top=(lsT+dy)+'px';}
+    else if(legMode==='se'){leg.style.width=Math.max(220,lsW+dx)+'px';leg.style.height=Math.max(100,lsH+dy)+'px';applyLegScale();}
+    else if(legMode==='ne'){leg.style.top=(lsT+dy)+'px';leg.style.width=Math.max(220,lsW+dx)+'px';leg.style.height=Math.max(100,lsH-dy)+'px';applyLegScale();}
+    else if(legMode==='sw'){leg.style.left=(lsL+dx)+'px';leg.style.width=Math.max(220,lsW-dx)+'px';leg.style.height=Math.max(100,lsH+dy)+'px';applyLegScale();}
+    else if(legMode==='nw'){leg.style.left=(lsL+dx)+'px';leg.style.top=(lsT+dy)+'px';leg.style.width=Math.max(220,lsW-dx)+'px';leg.style.height=Math.max(100,lsH-dy)+'px';applyLegScale();}
+    else if(legMode==='e'){leg.style.width=Math.max(220,lsW+dx)+'px';applyLegScale();}
+    else if(legMode==='w'){leg.style.left=(lsL+dx)+'px';leg.style.width=Math.max(220,lsW-dx)+'px';applyLegScale();}
+    else if(legMode==='s'){leg.style.height=Math.max(100,lsH+dy)+'px';}
+    else if(legMode==='n'){leg.style.top=(lsT+dy)+'px';leg.style.height=Math.max(100,lsH-dy)+'px';}
+  });
+}
+function reset(){curva.style.left='${curvaX0}px';curva.style.top='${curvaY0}px';curva.style.width='${curvaW0}px';curva.style.height='${curvaH0}px';}
+async function dl(fmt){
+ try{
+  curva.classList.remove('sel');
+  const w=PAGE_W,h=PAGE_H;
+  const cx=parseFloat(curva.style.left)||0,cy=parseFloat(curva.style.top)||0,cw=parseFloat(curva.style.width)||curva.offsetWidth,ch=parseFloat(curva.style.height)||curva.offsetHeight;
+  const curvaSvg=curva.querySelector('svg'),curvaInner=curvaSvg.innerHTML,curvaVB=curvaSvg.getAttribute('viewBox');
+  const PAD=${PAD},HEADER_H=${HEADER_H},FOOTER_H=${FOOTER_H};
+  const LOGO='${LOGO_B64}';
+  let s='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'">';
+  s+='<rect width="'+w+'" height="'+h+'" fill="white"/>';
+  s+='<rect x="'+PAD+'" y="'+PAD+'" width="'+(w-2*PAD)+'" height="'+(h-2*PAD)+'" fill="none" stroke="#333" stroke-width="1.5"/>';
+  s+='<line x1="'+PAD+'" y1="'+(PAD+HEADER_H)+'" x2="'+(w-PAD)+'" y2="'+(PAD+HEADER_H)+'" stroke="#333" stroke-width="1.5"/>';
+  s+='<line x1="'+(PAD+600)+'" y1="'+(PAD+10)+'" x2="'+(PAD+600)+'" y2="'+(PAD+HEADER_H-10)+'" stroke="#aaa"/>';
+  const cxT=w/2;
+  
+  s+='<text x="'+cxT+'" y="'+(PAD+115)+'" text-anchor="middle" font-size="70" font-weight="900" fill="#111" font-family="Arial Black, Arial, sans-serif" letter-spacing="3">${nom.toUpperCase()}</text>';
+  
+  s+='<line x1="'+(w-PAD-440)+'" y1="'+(PAD+10)+'" x2="'+(w-PAD-440)+'" y2="'+(PAD+HEADER_H-10)+'" stroke="#aaa"/>';
+  s+='<text x="'+(w-PAD-220)+'" y="'+(PAD+85)+'" text-anchor="middle" font-size="48" font-weight="900" fill="#111" font-family="Arial,sans-serif">${fechaTxt}</text>';
+  s+='<text x="'+(w-PAD-220)+'" y="'+(PAD+135)+'" text-anchor="middle" font-size="28" fill="#666" letter-spacing="4" font-weight="bold" font-family="Arial,sans-serif">FECHA</text>';
+  s+='<g transform="translate('+cx+','+cy+')"><svg width="'+cw+'" height="'+ch+'" viewBox="'+curvaVB+'" preserveAspectRatio="none">'+curvaInner+'</svg></g>';
+  const legEl=document.getElementById('leg-mov');
+  if(legEl){
+    legEl.classList.remove('sel');
+    const lx=parseFloat(legEl.style.left)||0,ly=parseFloat(legEl.style.top)||0;
+    const lw=legEl.offsetWidth,lhActual=legEl.offsetHeight;
+    const items=Array.from(legEl.querySelectorAll('.leg-row'));
+    const scale=parseFloat(legEl.dataset.scale)||1;
+    const titleH=46*scale,rowH=42*scale,pad=18*scale;
+    s+='<rect x="'+lx+'" y="'+ly+'" width="'+lw+'" height="'+lhActual+'" fill="white" fill-opacity=".85" stroke="none" rx="6"/>';
+    s+='<text x="'+(lx+lw/2)+'" y="'+(ly+pad+24*scale)+'" text-anchor="middle" font-size="'+(26*scale)+'" font-weight="900" fill="#1a5276" font-family="Arial,sans-serif" letter-spacing="2">QUÍMICOS</text>';
+    s+='<line x1="'+(lx+10)+'" y1="'+(ly+pad+36*scale)+'" x2="'+(lx+lw-10)+'" y2="'+(ly+pad+36*scale)+'" stroke="#ddd" stroke-width="2"/>';
+    items.forEach((row,i)=>{
+      const swEl=row.querySelector('.leg-sw'),txEl=row.querySelector('.leg-tx');
+      const col=swEl.style.background||swEl.style.backgroundColor;
+      const tx=txEl.textContent;
+      const ry=ly+pad+titleH+i*rowH;
+      s+='<rect x="'+(lx+pad)+'" y="'+(ry+6*scale)+'" width="'+(38*scale)+'" height="'+(30*scale)+'" rx="3" fill="'+col+'" stroke="#555" stroke-width="1.2"/>';
+      s+='<text x="'+(lx+pad+50*scale)+'" y="'+(ry+28*scale)+'" font-size="'+(24*scale)+'" font-weight="bold" fill="#111" font-family="Arial,sans-serif">'+tx.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</text>';
+    });
+  }
+  s+='<line x1="'+PAD+'" y1="'+(h-PAD-FOOTER_H)+'" x2="'+(w-PAD)+'" y2="'+(h-PAD-FOOTER_H)+'" stroke="#333" stroke-width="1.5"/>';
+  s+='<text x="'+(PAD+40)+'" y="'+(h-PAD-FOOTER_H/2-5)+'" font-size="44" font-weight="900" fill="#111" letter-spacing="2" font-family="Arial,sans-serif">VERSIÓN: ${ver}</text>';
+  s+='<text x="'+(PAD+40)+'" y="'+(h-PAD-FOOTER_H/2+45)+'" font-size="30" fill="#444" font-weight="bold" font-family="Arial,sans-serif">N° ${num} · ${sedeTxt} · ${tipo.toUpperCase()}</text>';
+  s+='<line x1="'+(PAD+700)+'" y1="'+(h-PAD-FOOTER_H+10)+'" x2="'+(PAD+700)+'" y2="'+(h-PAD-10)+'" stroke="#aaa"/>';
+  const fy=h-PAD-FOOTER_H/2+30;
+  s+='<text x="'+(w/2)+'" y="'+fy+'" text-anchor="middle" font-size="108" font-weight="bold" fill="#1a5276" font-family="Brush Script MT, cursive" font-style="italic" letter-spacing="4">Curva ${num} ${tipo}</text>';
+  s+='<line x1="'+(w-PAD-480)+'" y1="'+(h-PAD-FOOTER_H+10)+'" x2="'+(w-PAD-480)+'" y2="'+(h-PAD-10)+'" stroke="#aaa"/>';
+  s+='<text x="'+(w-PAD-240)+'" y="'+(h-PAD-FOOTER_H/2-15)+'" text-anchor="middle" font-size="36" font-weight="900" fill="#333" letter-spacing="3" font-family="Arial,sans-serif">STD</text>';
+  s+='<text x="'+(w-PAD-240)+'" y="'+(h-PAD-FOOTER_H/2+45)+'" text-anchor="middle" font-size="68" font-weight="bold" fill="#c0392b" font-family="monospace">${stdTxt}</text>';
+  s+='</svg>';
+  const maxArea=50000000;
+  const maxDim=14000;
+  let sc=2;
+  while((w*sc*h*sc>maxArea||w*sc>maxDim||h*sc>maxDim)&&sc>0.6){sc-=0.1;}
+  sc=Math.max(sc,1.2);
+  const c=document.createElement('canvas');c.width=Math.floor(w*sc);c.height=Math.floor(h*sc);
+  const ctx=c.getContext('2d');ctx.scale(sc,sc);ctx.fillStyle='white';ctx.fillRect(0,0,w,h);
+  const logoImg=new Image();logoImg.src=LOGO;
+  await new Promise((res)=>{logoImg.onload=res;logoImg.onerror=res;});
+  const img=new Image();img.crossOrigin='anonymous';
+  img.onload=()=>{
+    ctx.drawImage(img,0,0,w,h);
+    try{
+      const maxLW=580,maxLH=HEADER_H-30;
+      const ar=logoImg.naturalWidth/logoImg.naturalHeight||1.8;
+      let lw=maxLW,lh=lw/ar;
+      if(lh>maxLH){lh=maxLH;lw=lh*ar;}
+      const lx=PAD+10+(maxLW-lw)/2,ly=PAD+10+(maxLH-lh)/2;
+      ctx.drawImage(logoImg,lx,ly,lw,lh);
+    }catch(e){console.error(e);}
+    const a=document.createElement('a');a.download='${filePrefix}.'+(fmt==='jpeg'?'jpg':fmt);
+    try{a.href=c.toDataURL('image/'+fmt,.95);a.click();}catch(e){alert('Error al guardar: '+e.message);}
+  };
+  img.onerror=(e)=>{
+    let msg='Error renderizando SVG.\\n\\n';
+    msg+='Tamaño página: '+w+'×'+h+'\\n';
+    msg+='Canvas final: '+c.width+'×'+c.height+'\\n';
+    msg+='SVG bytes: '+s.length+'\\n\\n';
+    msg+='Probables causas:\\n';
+    msg+='- Imagen muy grande para el navegador\\n';
+    msg+='- Caracter especial en el nombre o químicos\\n\\n';
+    msg+='Intenta: reducir el tamaño de la curva o quitar caracteres especiales (°, ñ, tildes).';
+    alert(msg);
+    console.error('SVG export error',e);console.log('SVG content:',s.substring(0,500));
+  };
+  const blob=new Blob([s],{type:'image/svg+xml;charset=utf-8'});img.src=URL.createObjectURL(blob);
+ }catch(e){alert('Error en exportación: '+e.message);console.error(e);}
+}
+<\/scr`+`ipt></body></html>`);
+}
+
+function exportJPG(){
+  const svg=document.getElementById('svgC').cloneNode(true);
+  const w=svgW(),h=dims().h;
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  const s=new XMLSerializer().serializeToString(svg);
+  const c=document.createElement('canvas');c.width=w;c.height=h;
+  const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);
+  const num=document.getElementById('h-num').value||'curva';
+  const tipo=document.getElementById('h-tipo').value;
+  const img=new Image(),blob=new Blob([s],{type:'image/svg+xml'}),url=URL.createObjectURL(blob);
+  img.onload=()=>{ctx.drawImage(img,0,0,w,h);const a=document.createElement('a');a.download=num.replace(/\s+/g,'_')+'.jpg';a.href=c.toDataURL('image/jpeg',.95);a.click();URL.revokeObjectURL(url);};
+  img.src=url;
+}
+</script>
+</body></html>
